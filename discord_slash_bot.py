@@ -5,7 +5,7 @@ from datetime import datetime
 from threading import Thread, Event
 from queue import Queue
 
-class SlashCommandBot(discord.Client):
+class SlashBot(discord.Client):
     options = {
         "token": "",
         "task_sleep": 1.0,
@@ -99,7 +99,7 @@ class SlashCommandBot(discord.Client):
         await self.slash.sync_all_commands()
         try:
             if len(self.on_ready_tasks) > 0:
-                await asyncio.gather(*[task(self) for task in self.on_ready_tasks])
+                await asyncio.gather(*[task() for task in self.on_ready_tasks])
                 
         except Exception as e:
             error_msg = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
@@ -113,7 +113,7 @@ class SlashCommandBot(discord.Client):
                     await self.close()
                 else:
                     if len(self.tasks) > 0:
-                        await asyncio.gather(*[task(self) for task in self.tasks])
+                        await asyncio.gather(*[task() for task in self.tasks])
 
             except Exception as e:
                 error_msg = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
