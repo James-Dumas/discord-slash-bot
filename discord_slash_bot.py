@@ -157,5 +157,3 @@ class SlashCommandBot(discord.Client):
         self.on_ready_tasks.append(func)
         return func
 
-bot = SlashCommandBot()
-bot.run()
