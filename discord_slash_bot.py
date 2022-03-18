@@ -8,9 +8,10 @@ from queue import Queue
 class SlashBot(discord.Client):
     options = {
         "token": "",
-        "task_sleep": 1.0,
+        "task_interval": 1.0,
         "log_dir": "logs",
         "max_log_files": 10,
+        "max_consecutive_errors": 10,
     }
 
     def __init__(self, *args, **kwargs):
@@ -120,7 +121,7 @@ class SlashBot(discord.Client):
                 self.log(error_msg)
                 if time.time() - self.last_error_ts < 10:
                     self.consecutive_errors += 1
-                    if self.consecutive_errors >= 10:
+                    if self.consecutive_errors >= self.options["max_consecutive_errors"]:
                         self.log("too many consecutive errors!")
                         self.stop = True
 
@@ -129,7 +130,7 @@ class SlashBot(discord.Client):
 
                 self.last_error_ts = time.time()
 
-            await asyncio.sleep(self.options["task_sleep"])
+            await asyncio.sleep(self.options["task_interval"])
 
     def log(self, text: str):
         print(text)
