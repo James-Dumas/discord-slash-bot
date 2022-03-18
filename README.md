@@ -5,8 +5,8 @@ A wrapper API for [discord.py](https://discordpy.readthedocs.io/en/stable/) and 
 
 - decorators allow customizing the behavior of your bot without having to subclass `discord.Client`
 - configurable through a json file (automatically generated on first run)
-- output/error logging & log file management
-- stops automatically on many consecutive errors
+- output/error logging & automatic deletion of old log files
+- stops automatically after many consecutive errors
 
 ## Example
 
