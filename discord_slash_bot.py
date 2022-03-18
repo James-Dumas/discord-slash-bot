@@ -17,15 +17,16 @@ class SlashBot(discord.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.stop = False
+        self.stop = Event()
         self.slash = SlashCommand(self)
-        self.log_thread = Thread(target=self.__log_thread_task)
-        self.log_queue = Queue()
-        self.stopped = Event()
-        self.consecutive_errors = 0
-        self.last_error_ts = 0
-        self.tasks = []
-        self.on_ready_tasks = []
+
+        self.__log_thread = Thread(target=self.__log_thread_task)
+        self.__log_queue = Queue()
+        self.__stopped = Event()
+        self.__consecutive_errors = 0
+        self.__last_error_ts = 0
+        self.__tasks = []
+        self.__on_ready_tasks = []
         
         # read options
         if os.path.isfile("options.json"):
@@ -51,11 +52,11 @@ class SlashBot(discord.Client):
     def run(self):
         self.log("starting bot...")
 
-        # setup threaded tasks
-        self.log_thread.daemon = True
-        self.log_thread.start()
+        # setup threaded __tasks
+        self.__log_thread.daemon = True
+        self.__log_thread.start()
 
-        # setup async tasks
+        # setup async __tasks
         async_tasks = [
             self.loop.create_task(self.start(self.options["token"], reconnect=True)),
             self.loop.create_task(self.__task_runner()),
@@ -79,7 +80,7 @@ class SlashBot(discord.Client):
             pass
 
         if not clean_exit:
-            self.stop = True
+            self.stop.set()
             gathered_tasks = asyncio.gather(*async_tasks[1:])
             self.loop.run_until_complete(gathered_tasks)
 
@@ -91,16 +92,16 @@ class SlashBot(discord.Client):
             self.loop.run_until_complete(self.close())
 
         self.loop.close()
-        self.stopped.set()
+        self.__stopped.set()
         self.log("done")
-        self.log_thread.join()
+        self.__log_thread.join()
 
     async def on_ready(self):
         self.log("bot ready")
         await self.slash.sync_all_commands()
         try:
-            if len(self.on_ready_tasks) > 0:
-                await asyncio.gather(*[task() for task in self.on_ready_tasks])
+            if len(self.__on_ready_tasks) > 0:
+                await asyncio.gather(*[task() for task in self.__on_ready_tasks])
                 
         except Exception as e:
             error_msg = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
@@ -109,36 +110,36 @@ class SlashBot(discord.Client):
     async def __task_runner(self):
         while not self.is_closed():
             try:
-                if self.stop:
+                if self.stop.is_set():
                     self.log("stopping...")
                     await self.close()
                 else:
-                    if len(self.tasks) > 0:
-                        await asyncio.gather(*[task() for task in self.tasks])
+                    if len(self.__tasks) > 0:
+                        await asyncio.gather(*[task() for task in self.__tasks])
 
             except Exception as e:
                 error_msg = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
                 self.log(error_msg)
-                if time.time() - self.last_error_ts < 10:
-                    self.consecutive_errors += 1
-                    if self.consecutive_errors >= self.options["max_consecutive_errors"]:
+                if time.time() - self.__last_error_ts < 10:
+                    self.__consecutive_errors += 1
+                    if self.__consecutive_errors >= self.options["max_consecutive_errors"]:
                         self.log("too many consecutive errors!")
-                        self.stop = True
+                        self.stop.set()
 
                 else:
-                    self.consecutive_errors = 1
+                    self.__consecutive_errors = 1
 
-                self.last_error_ts = time.time()
+                self.__last_error_ts = time.time()
 
             await asyncio.sleep(self.options["task_interval"])
 
     def log(self, text: str):
         print(text)
-        self.log_queue.put((time.time(), text))
+        self.__log_queue.put((time.time(), text))
 
     def __log_thread_task(self):
-        while not self.stopped.is_set():
-            log_item = self.log_queue.get()
+        while not self.__stopped.is_set():
+            log_item = self.__log_queue.get()
             with open(self.log_file, "a") as f:
                 f.write(f"[{datetime.fromtimestamp(log_item[0]).strftime('%H:%M:%S')}]: {log_item[1]}\n")
     
@@ -148,13 +149,13 @@ class SlashBot(discord.Client):
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("task decorator must be used on a coroutine")
 
-        self.tasks.append(func)
+        self.__tasks.append(func)
         return func
 
     def on_ready_task(self, func):
         if not asyncio.iscoroutinefunction(func):
             raise TypeError("on_ready_task decorator must be used on a coroutine")
 
-        self.on_ready_tasks.append(func)
+        self.__on_ready_tasks.append(func)
         return func
 
