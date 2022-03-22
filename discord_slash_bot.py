@@ -30,8 +30,13 @@ class SlashBot(discord.Client):
         
         # read options
         if os.path.isfile("options.json"):
-            with open("options.json", "r") as f:
-                self.options = json.load(f)
+            with open("options.json", "rw") as f:
+                new_options = json.load(f)
+                self.options.update(new_options)
+
+            with open("options.json", "w") as f:
+                json.dump(self.options, f, indent=4)
+
         else:
             self.log("options.json not found! creating template file, please fill in the token")
             with open("options.json", "w") as f:
@@ -44,6 +49,7 @@ class SlashBot(discord.Client):
                 log_files.sort(reverse=True)
                 for f in log_files[self.options["max_log_files"] - 1:]:
                     os.remove(os.path.join(self.options['log_dir'], f))
+
         else:
             os.mkdir(self.options["log_dir"])
 
