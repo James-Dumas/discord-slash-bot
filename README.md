@@ -1,12 +1,17 @@
 # discord-slash-bot
 A wrapper API for [discord.py](https://discordpy.readthedocs.io/en/stable/) and [discord-py-interactions](https://pypi.org/project/discord-py-interactions/) that allows easily creating a discord bot with slash commands.
 
+## Install
+
+Clone the repository, then run `python3 setup.py install --user` to install for your user, or `sudo python3 setup.py install` to install globally.
+
 ## Features
 
 - decorators allow customizing the behavior of your bot without having to subclass `discord.Client`
 - configurable through a json file (automatically generated on first run)
+- any custom options can be added to the json file and will be accessible from the bot instance
 - output/error logging & automatic deletion of old log files
-- stops automatically after many consecutive errors
+- stops automatically after a specified maximum number of consecutive errors
 
 ## Example
 
