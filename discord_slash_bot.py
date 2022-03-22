@@ -30,7 +30,7 @@ class SlashBot(discord.Client):
         
         # read options
         if os.path.isfile("options.json"):
-            with open("options.json", "rw") as f:
+            with open("options.json", "r") as f:
                 new_options = json.load(f)
                 self.options.update(new_options)
 
