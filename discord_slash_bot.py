@@ -82,34 +82,48 @@ class SlashBot(discord.Client):
 
         gathered_tasks = asyncio.gather(*async_tasks)
 
-        clean_exit = False
-        try:
-            # start async
-            self.loop.run_until_complete(gathered_tasks)
-            clean_exit = True
+        if not has_connection():
+            self.log("no internet connection, waiting...")
+            connection_wait_start = time.time()
+            time.sleep(2)
+            while not has_connection():
+                time.sleep(2)
+                if time.time() - connection_wait_start > 300:
+                    self.log("no internet connection for 5 minutes, stopping...")
+                    self.stop.set()
+                    break
+
+        if not self.stop.is_set():
+            clean_exit = False
+            self.log("connecting...")
+            try:
+                # start async
+                self.loop.run_until_complete(gathered_tasks)
+                clean_exit = True
+            
+            except (client_exceptions.ClientConnectorError, client_exceptions.ClientConnectionError, discord.errors.DiscordServerError):
+                self.log("error connecting to Discord")
         
-        except (client_exceptions.ClientConnectorError, client_exceptions.ClientConnectionError, discord.errors.DiscordServerError):
-            self.log("error connecting to Discord")
-    
-        except discord.errors.LoginFailure:
-            self.log("bot failed to login (invalid token?)")
+            except discord.errors.LoginFailure:
+                self.log("bot failed to login (invalid token?)")
 
-        except KeyboardInterrupt:
-            pass
+            except KeyboardInterrupt:
+                pass
 
-        if not clean_exit:
-            self.stop.set()
-            gathered_tasks = asyncio.gather(*async_tasks[1:])
-            self.loop.run_until_complete(gathered_tasks)
+            if not clean_exit:
+                self.stop.set()
+                gathered_tasks = asyncio.gather(*async_tasks[1:])
+                self.loop.run_until_complete(gathered_tasks)
 
-            for task in async_tasks:
-                if not task.done():
-                    task.cancel()
+                for task in async_tasks:
+                    if not task.done():
+                        task.cancel()
 
-        if not self.is_closed():
-            self.loop.run_until_complete(self.close())
+            if not self.is_closed():
+                self.loop.run_until_complete(self.close())
 
-        self.loop.close()
+            self.loop.close()
+
         self.__stopped.set()
         self.log("done")
         self.__log_thread.join()
