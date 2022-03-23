@@ -1,9 +1,21 @@
-import discord, asyncio, os, json, time, traceback
+import discord, asyncio, os, json, time, traceback, socket
 from discord_slash import SlashCommand
 from aiohttp import client_exceptions
 from datetime import datetime
 from threading import Thread, Event
 from queue import Queue
+
+def has_connection(host="8.8.8.8", port=53, timeout=3):
+    """Check if there is an internet connection"""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(timeout)
+        s.connect((host, port))
+        s.shutdown(socket.SHUT_RDWR)
+        s.close()
+        return True
+    except socket.error as ex:
+        return False
 
 class SlashBot(discord.Client):
     options = {
