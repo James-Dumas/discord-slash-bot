@@ -346,7 +346,7 @@ class BotDatabase:
             current_data.update(data)
             await self.__write(gid, current_data)
     
-    async def delete(self, guild: discord.Guild, keys: tuple[str]) -> int:
+    async def delete(self, guild: discord.Guild, keys: tuple) -> int:
         """Delete items from a guild's database"""
         if self.stop.is_set():
             raise DatabaseClosedException()
