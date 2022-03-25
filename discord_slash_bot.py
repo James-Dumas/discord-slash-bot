@@ -203,7 +203,7 @@ class DatabaseClosedException(Exception):
 
 class BotDatabase:
 
-    def __init__(self, db_dir, default_data={}, cache_size=10, io_sleep_interval=0.01):
+    def __init__(self, db_dir="data", default_data={}, cache_size=10, io_sleep_interval=0.01):
         if not os.path.isabs(db_dir):
             db_dir = os.path.abspath(db_dir)
 
