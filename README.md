@@ -1,5 +1,5 @@
 # discord-slash-bot
-A wrapper API for [discord.py](https://discordpy.readthedocs.io/en/stable/) and [discord-py-interactions](https://pypi.org/project/discord-py-interactions/) that allows easily creating a discord bot with slash commands.
+A wrapper library for [discord.py](https://discordpy.readthedocs.io/en/stable/) and [discord-py-interactions](https://pypi.org/project/discord-py-interactions/) that allows easily creating a discord bot with slash commands.
 
 ## Install
 
