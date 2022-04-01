@@ -34,8 +34,8 @@ class SlashBot(discord.Client):
         super().__init__(*args, **kwargs)
 
         self.stop = Event()
-        self.slash = SlashCommand(self)
 
+        self.__slash = SlashCommand(self)
         self.__log_thread = Thread(target=self.__log_thread_task)
         self.__log_queue = Queue()
         self.__stopped = Event()
@@ -134,7 +134,7 @@ class SlashBot(discord.Client):
 
     async def on_ready(self):
         self.log("bot ready")
-        await self.slash.sync_all_commands()
+        await self.__slash.sync_all_commands()
         try:
             if len(self.__on_ready_tasks) > 0:
                 await asyncio.gather(*[task() for task in self.__on_ready_tasks])
@@ -194,6 +194,23 @@ class SlashBot(discord.Client):
 
         self.__on_ready_tasks.append(func)
         return func
+
+    def slash(self, *args, **kwargs):
+        def __inner(func):
+            if not asyncio.iscoroutinefunction(func):
+                raise TypeError("slash_command decorator must be used on a coroutine")
+
+            @self.__slash.slash(*args, **kwargs)
+            async def __func(*f_args, **f_kwargs):
+                try:
+                    await func(*f_args, **f_kwargs)
+                except Exception as e:
+                    error_msg = "".join(traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__))
+                    self.log(error_msg)
+
+            return __func
+
+        return __inner
 
 # Database stuff
 

@@ -18,6 +18,7 @@ Clone the repository, then run `python3 setup.py install --user` to install for 
 ```python
 from discord_slash_bot import SlashBot
 from discord_slash import SlashContext
+from interactions import OptionType
 from discord import Message
 
 bot = SlashBot()
@@ -33,9 +34,27 @@ async def run_repeatedly():
   bot.log("beep boop!")
 
 # create a slash command for the bot
-@bot.slash.slash(name="hello", description="A friendly greeting")
-async def command_hello(context: SlashContext):
-  await context.send(content="Hello there!")
+@bot.slash(
+    name="hello",
+    description="A friendly greeting",
+    options=[
+        {
+            "name": "greeting",
+            "description": "How to greet the user",
+            "type": OptionType.STRING,
+            "required": True
+        },
+        {
+            "name": "nice_day",
+            "description": "Whether the day is nice",
+            "type": OptionType.BOOLEAN,
+            "required": False
+        },
+    ],
+    guild_ids=[775372599324573706] # put the ID of your testing server here. remove this argument for deployment.
+)
+async def command_hello(context: SlashContext, greeting: str, nice_day: bool = True):
+  await context.send(content=f"{greeting}\nToday is{('' if nice_day else ' not')} a nice day!")
 
 # subscribe to the on_message event from discord.py
 @bot.event
